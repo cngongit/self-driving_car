@@ -34,7 +34,7 @@ class Road{
 
         //lanes
         for(let i = 1; i <= this.laneCount -1;i++){
-            const x = lerb(
+            const x = lerp(
                 this.left,
                 this.right,
                 i / this.laneCount
