@@ -19,6 +19,10 @@ class Car{
      * upadetes the car acording to the input user / nn
      */
     update(){
+        this.#move();
+    }
+
+    #move(){
         if (this.controls.forward) {
             this.speed += this.acceleration;
         }
