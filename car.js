@@ -11,6 +11,7 @@ class Car{
         this.maxSpeed = 3;
         this.friction = 0.05;
         this.angle = 0;
+        this.damaged = false;
 
         this.sensor = new Sensor(this);
         this.controls = new Controls();
@@ -20,9 +21,51 @@ class Car{
      * upadetes the car acording to the input user / nn
      */
     update(roadBorders){
-        this.#move();
+
+        if (!this.damaged) {
+            this.#move();
+            this.polygon  = this.#createPolygon();
+            this.damaged = this.#assessDamage(roadBorders); 
+        }
         this.sensor.update(roadBorders);
     }
+
+    #assessDamage(roadBorders){
+        for (let i = 0; i < roadBorders.length; i++) {
+            const curBorder = roadBorders[i];
+            if (polysIntersection(this.polygon, curBorder)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    #createPolygon(){
+        const points = [];
+        //length from center to corner
+        const rad = Math.hypot(this.width, this.height) / 2;
+        //angel to corner
+        const alpha = Math.atan2(this.width, this.height);
+
+        points.push({
+            x:this.x - Math.sin(this.angle - alpha) * rad,
+            y:this.y - Math.cos(this.angle - alpha) * rad
+        });
+        points.push({
+            x:this.x - Math.sin(this.angle + alpha) * rad,
+            y:this.y - Math.cos(this.angle + alpha) * rad
+        });
+        points.push({
+            x:this.x - Math.sin(Math.PI + this.angle - alpha) * rad,
+            y:this.y - Math.cos(Math.PI + this.angle - alpha) * rad
+        });
+        points.push({
+            x:this.x - Math.sin(Math.PI + this.angle + alpha) * rad,
+            y:this.y - Math.cos(Math.PI + this.angle + alpha) * rad
+        });
+        return points;
+    }
+
 
     #move(){
         if (this.controls.forward) {
@@ -69,20 +112,21 @@ class Car{
      * Draws the car on the screan
      */
     draw(ctx){
-        //rotation
-        ctx.save();
-        ctx.translate(this.x,this.y);
-        ctx.rotate(-this.angle);
+        if (this.damaged) {
+            ctx.fillStyle = "grey";
+        }else{
+            ctx.fillStyle = "black";
+        }
 
         ctx.beginPath();
-        ctx.rect(
-            -this.width/2,
-            -this.height/2,
-            this.width,
-            this.height
-        );
+        ctx.moveTo(this.polygon[0].x, this.polygon[0].y);
+
+        for (let i = 0; i < this.polygon.length; i++) {
+            const point = this.polygon[i];
+            ctx.lineTo(point.x, point.y);
+            
+        }
         ctx.fill();
-        ctx.restore();
 
         this.sensor.draw(ctx);
     }
