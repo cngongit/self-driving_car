@@ -1,5 +1,5 @@
 class Car{
-    constructor(x, y, width, height){
+    constructor(x, y, width, height, controllType, maxSpeed = 3){
         this.x = x;
         this.y = y;
         this.width = width;
@@ -8,31 +8,43 @@ class Car{
         this.speed = 0;
         this.acceleration = 0.2;
 
-        this.maxSpeed = 3;
+        this.maxSpeed = maxSpeed;
         this.friction = 0.05;
         this.angle = 0;
         this.damaged = false;
 
-        this.sensor = new Sensor(this);
-        this.controls = new Controls();
+        if (controllType != "DUMMY") {
+            this.sensor = new Sensor(this);
+        }
+        this.controls = new Controls(controllType);
+        
     }
 
     /**
      * upadetes the car acording to the input user / nn
      */
-    update(roadBorders){
+    update(roadBorders, traffic){
 
         if (!this.damaged) {
             this.#move();
             this.polygon  = this.#createPolygon();
-            this.damaged = this.#assessDamage(roadBorders); 
+            this.damaged = this.#assessDamage(roadBorders, traffic); 
         }
-        this.sensor.update(roadBorders);
+        if (this.sensor) {
+            this.sensor.update(roadBorders, traffic);
+        }
+        
     }
 
-    #assessDamage(roadBorders){
+    #assessDamage(roadBorders, traffic){
         for (let i = 0; i < roadBorders.length; i++) {
             const curBorder = roadBorders[i];
+            if (polysIntersection(this.polygon, curBorder)) {
+                return true;
+            }
+        }
+        for (let i = 0; i < traffic.length; i++) {
+            const curBorder = traffic[i].polygon;
             if (polysIntersection(this.polygon, curBorder)) {
                 return true;
             }
@@ -111,11 +123,11 @@ class Car{
     /**
      * Draws the car on the screan
      */
-    draw(ctx){
+    draw(ctx, color){
         if (this.damaged) {
             ctx.fillStyle = "grey";
         }else{
-            ctx.fillStyle = "black";
+            ctx.fillStyle = color;
         }
 
         ctx.beginPath();
@@ -128,6 +140,9 @@ class Car{
         }
         ctx.fill();
 
-        this.sensor.draw(ctx);
+        if (this.sensor) {
+            this.sensor.draw(ctx);
+        }
+        
     }
 }
